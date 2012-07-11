@@ -25,6 +25,16 @@ tron.test( ->
 Tron tests can be selectively run a percentage of the time to ease up CPU usage for 
 deployed systems.
 
+## Stopwatch
+
+One function to start and stop the timer.
+
+```coffeescript
+tron.stopwatch('awesomebenchmark')
+fastest_code()
+tron.stopwatch('awesomebenchmark')
+```
+
 ## Log Levels
 
 When fully implemented, log levels will allow you to rank messages and tests by importance.
