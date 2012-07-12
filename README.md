@@ -13,6 +13,20 @@ Except for the special features, `tron` behaves exactly like `console`
 A tron test is a function that you pass to tron that contains any sanity checks that you don't
 want bogging down your final product.
 
+Call it with your test function like this:
+
+```coffeescript
+ my_test = (your, args, here) ->
+   tron.log( 'this writes to the log' )
+   tron.info( "this is \#{your} info message" )
+   tron.warn( "this is warning about your \#{args}" )
+   tron.error( "there is an error \#{here}" )
+   
+ tron.test(my_test, 'your', 'args', 'here')
+```
+
+or call it like this:
+
 ```coffeescript
 tron.test( ->
   tron.log('this is a log message')
@@ -22,8 +36,13 @@ tron.test( ->
 )
 ```
 
-Tron tests can be selectively run a percentage of the time to ease up CPU usage for 
+Tron tests can be selectively run a percentage of the time using `tron.throttle()` to ease up CPU usage for 
 deployed systems.
+
+### Throttle
+
+Calling `tron.throttle( p )` where `p` is a fraction representing the percentage of tests you
+want to run will allow you to lift some of the testing burden off of deployed servers.
 
 ## Stopwatch
 
