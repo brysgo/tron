@@ -5,29 +5,41 @@ class Tron
   constructor: ->
     @timers = []
     @debug = false
+    @scale = 1.0
     
-  test: (args...) ->
+  test: (fn, args...) ->
     u = """
 
      This simple function will define the way we test Socrenchus. You can do
      things in most of the same ways you did them with the console.
 
      Call it with your test function like this:
-
-      tron.test( ->
+      
+      my_test = (your, args, here) ->
         tron.log( 'this writes to the log' )
-        tron.info( 'this is an info message' )
-        tron.warn( 'this is a warning' )
-        tron.error( 'this is an error' )
-      )
+        tron.info( "this is \#{your} info message" )
+        tron.warn( "this is warning about your \#{args}" )
+        tron.error( "there is an error \#{here}" )
+        
+      tron.test(my_test, 'your', 'args', 'here')
 
     """
-    for a in args
-      unless typeof a == 'function'
-        @warn(u)
-      else
-        a()
-        
+    unless typeof fn == 'function'
+      @warn(u)
+    else
+      args ?= []
+      if Math.random() < @scale
+        fn(args...)
+  
+  throttle: ( scale ) ->
+    u = """
+    
+     Use this to throttle the number of tests being run. Scale is a fraction
+     that represents the probability that any given test function will get run.
+    
+    """
+    @scale = scale
+
   stopwatch: ( timer_name ) ->
     u = """
     
@@ -91,3 +103,6 @@ tron = new Tron()
 
 for k,v of tron
   exports[k] = v
+
+tron.test ->
+  tron.log 'ok'
