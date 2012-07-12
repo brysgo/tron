@@ -1,8 +1,7 @@
 # Tron
 
 Short for jumbotron, it is a minimalistic framework to help with our minimalistic assertion 
-based tests. Tron was built for use with meteor, but could probably be ported with minimal
-effort to another web platform.
+based tests.
 
 ## Usage
 

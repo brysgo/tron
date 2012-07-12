@@ -4,8 +4,31 @@ Array::remove = (e) -> @[t..t] = [] if (t = @indexOf(e)) > -1
 class Tron
   constructor: ->
     @timers = []
-    @debug = false
     @scale = 1.0
+    @subscriptions = [
+      (method, args) -> console[method](args...)
+    ]
+  
+  subscribe: ( fn ) ->
+    u = """
+    
+    Subscribe to console events with a function that takes two arguments
+    
+    The first argument is the console function being called, the second
+    is a list of arguments passed to that console function.
+    
+    """
+    handle = @subscriptions.length
+    @subscriptions.push( fn )
+  
+  unsubscribe: ( handle ) ->
+    u = """
+    
+    Unsubscribe from tron with the handle returned by subscribe.
+    
+    """
+    s = @subscriptions
+    @subscriptions = s[...handle].concat(s[handle+1..])
     
   test: (fn, args...) ->
     u = """
@@ -86,10 +109,9 @@ class Tron
         return true if key is method
     )()
     unless suppress
-      unless @debug
-        console[method](args...)
-      else
-        return [method].concat(args)
+      for s in @subscriptions
+        s(method, args)
+
 
   dir:    (args...) -> @write('dir', args) 
   trace:  (args...) -> @write('trace', args)

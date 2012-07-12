@@ -3,19 +3,21 @@ vows = require 'vows'
 assert = require 'assert'
 require 'coffee-script'
 tron = require path.join('..', 'tron')
-tron.debug = true
+tron.unsubscribe( 0 )
 
 vows.describe('loglevels').addBatch({
 
   'Log messages' :
 
     topic : -> ->
-      result = [
-        tron.log( 'log' ),
-        tron.info( 'info' ),
-        tron.warn( 'warn' ),
-        tron.error( 'error' )
-      ]
+      result = []
+      h = tron.subscribe( (m, a) -> result.push( [m].concat(a) ) )
+      tron.log( 'log' )
+      tron.info( 'info' )
+      tron.warn( 'warn' )
+      tron.error( 'error' )
+      tron.unsubscribe( h )
+      return result
 
     'work with no level set' : (topic) ->
       result = topic()
@@ -25,16 +27,16 @@ vows.describe('loglevels').addBatch({
 
     'go away if level is set right': (topic) ->
       t =
-        'warn': [0, 1]
-        'error': [0, 1, 2]
-        'info': [0]
-        'log': []
+        'warn': ['warn', 'error']
+        'error': ['error']
+        'info': ['info','warn','error']
+        'log': ['log','info','warn','error']
       for k, v of t
         tron.level( tron[k] )
-        for r, i in topic()
-          if i in v
-            assert.equal(r, undefined)
-          else
-            assert.notEqual(r, undefined)
+        result = ( i[0] for i in topic() )
+        for key in result
+          assert.isTrue( key in v )
+        for key in v
+          assert.isTrue( key in result )
 
 }).export(module)

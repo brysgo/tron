@@ -3,7 +3,6 @@ vows = require 'vows'
 assert = require 'assert'
 require 'coffee-script'
 tron = require path.join('..', 'tron')
-tron.debug = true
 
 vows.describe('throttle').addBatch({
 
