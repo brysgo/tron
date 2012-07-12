@@ -27,20 +27,18 @@ deployed systems.
 
 ## Log Levels
 
-When fully implemented, log levels will allow you to rank messages and tests by importance.
+Tron allows you to filter out messages of unimportance.
 
 ### Setting Level
 
-If the last argument passed to a tron function is an object it is assumed to be a config
-object and the level attribute will be used for the log level.
+To set the level, use:
 
-## Message Rerouting
-
-Messages can be rerouted to the server, client, both server+client, or can be emailed.
-
-### Level Sensitive Routing
-
-Messages can go different places based on their log level.
+```coffeescript
+###
+Here we will set tron to hide all messages less important than a warning.
+###
+tron.level( tron.warn )
+```
 
 ### License
 
