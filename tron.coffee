@@ -125,6 +125,15 @@ tron = new Tron()
 
 for k,v of tron
   exports[k] = v
+  
+class TronTests
+  constructor: ->
+  sanity: {}
+  chaos: {}
+  run: ( seq=`undefined` ) ->
+    unless seq?
+      v() for k, v of @chaos
+    else
+      @chaos[seq]()
 
-tron.test ->
-  tron.log 'ok'
+exports['tests'] = TronTests
