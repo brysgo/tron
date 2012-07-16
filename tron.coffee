@@ -18,8 +18,15 @@ class Tron
     is a list of arguments passed to that console function.
     
     """
-    handle = @subscriptions.length
-    @subscriptions.push( fn )
+    handle = `undefined`
+    switch typeof fn
+      when 'list'
+        handle = ( @subscribe(f) for f in fn )
+      when 'function'
+        handle = @subscriptions.length
+        @subscriptions.push( fn )
+      else @warn( u )
+    return handle
   
   unsubscribe: ( handle ) ->
     u = """
@@ -27,8 +34,29 @@ class Tron
     Unsubscribe from tron with the handle returned by subscribe.
     
     """
-    s = @subscriptions
-    @subscriptions = s[...handle].concat(s[handle+1..])
+    if handle?
+      s = @subscriptions
+      result = s[handle]
+      @subscriptions = s[...handle].concat(s[handle+1..])
+      return result
+    else
+      return ( @unsubscribe( i ) for s, i in @subscriptions )
+  
+  capture: ( fn ) ->
+    u = """
+    
+    Temperarily overrides all subscriptions and returns logs instead.
+    
+    """
+    unless typeof fn is 'function'
+      @warn( u )
+    
+    tmp = @subscriptions
+    r = []
+    @subscriptions = [ (args...) -> r.push( args ) ]
+    fn()
+    @subscriptions = tmp
+    return r
     
   test: (fn, args...) ->
     u = """
@@ -47,12 +75,17 @@ class Tron
       tron.test(my_test, 'your', 'args', 'here')
 
     """
-    unless typeof fn == 'function'
-      @warn(u)
-    else
-      args ?= []
-      if Math.random() < @scale
+    args ?= []
+    found = false
+    return unless Math.random() < @scale
+    switch typeof fn
+      when 'function'
         fn(args...)
+        found = true
+      else
+        @warn(u)
+    return found
+      
   
   throttle: ( scale ) ->
     u = """
@@ -128,12 +161,16 @@ for k,v of tron
   
 class TronTests
   constructor: ->
-  sanity: {}
-  chaos: {}
   run: ( seq=`undefined` ) ->
-    unless seq?
-      v() for k, v of @chaos
+    if seq?
+      try 
+        @[seq]()
+        tron.log( "#{seq} passed." )
+      catch error
+        tron.warn( "failure in #{seq}:")
+        tron.trace error
     else
-      @chaos[seq]()
+      for k of @
+        @run(k) if k[0..3] is 'try_'
 
 exports['tests'] = TronTests

@@ -1,45 +1,46 @@
 tron = require '../tron.coffee'
 
-for key, value of Math
-  if typeof value is 'function'
-    Number::[key] = (args...) ->
-      Math[key](@, args...)
-
-class Triangle
-  constructor: ( @a, @b, @c ) ->
-  angles: ->
-    Math.atan( @a / @b )
-    # make sure angles are the angles of a triange
-    tron.test( example_tests.sanity.is_triange, result... )
-  get_right_angle: (factor) ->
-    # make sure @a, @b, and @c are sides of right triangle
-    tron.test( example_tests.sanity.is_right, @a, @b, @c )
-    @a *= factor
-    @b *= factor
-    @c *= factor
-    return [ @a, @b, @c ]
-    
-# initialize our example class
-obj = new Triangle( 1, 2, 5 )
-
 class ExampleTests extends tron.tests
-  constructor: ->
-  sanity:
-    is_right: (a, b, c) ->
-      Number::pow = (p) -> Math.pow(@, p)
-      return a.pow(2) + b.pow(2) is c.pow(2)
-    is_triangle: (ab, bc, ac) ->
-      return (ab + ac + bc) is 180
-  chaos:
-    first_sequence: ->
-      obj.one()
-      obj.two()
-    second_sequence: ->
-      obj.three()
-      obj.one()
+  check_is_string: (str) ->
+    unless typeof str is 'string'
+      throw "#{str} is not a string!"
+  try_construct_with_number: ->
+    fail = new Horse( 5 )
+  try_move_henry: ->
+    result = tron.capture( ->
+      henry.move()
+    )
+    expected = [
+      [ 'log', [ 'Galloping...' ] ],
+      [ 'log', [ 'Henry the horse moved 45m.' ] ] 
+    ]
+    unless [].concat(result...).join('') is [].concat(expected...).join('')
+      throw "Expected #{expected} but got #{result}."
+
 
 # initialize our test class
 example_tests = new ExampleTests()
+
+class Animal
+  constructor: (@name) ->
+    tron.test( example_tests.check_is_string, @name )
+  move: (meters) ->
+    tron.log( @name + " moved #{meters}m." )
+
+class Snake extends Animal
+  move: ->
+    tron.log( "Slithering..." )
+    super 5
+
+class Horse extends Animal
+  move: ->
+    tron.log( "Galloping..." )
+    super 45
+
+henry = new Horse( 'Henry the horse' )
+sammy = new Snake( 'Sammy the snake' )
+
+# run tests
 example_tests.run()
 
 # export our namespace for requirejs
