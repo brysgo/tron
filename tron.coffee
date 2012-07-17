@@ -3,6 +3,13 @@ Array::remove = (e) -> @[t..t] = [] if (t = @indexOf(e)) > -1
 
 tests = require( './tron_tests.coffee' )
 
+special = (char) ->
+  '\x1b[' + {
+    green: '32m'
+    red: '31m'
+    clear: '0m'
+  }[char]
+
 class TronTestFramework
   constructor: ->
   _name_of_function: ( fn ) ->
@@ -14,17 +21,25 @@ class TronTestFramework
     tron.test_log = ( fn ) -> checks.push( fn )
     if seq?
       try 
+        color = special('green')
         @[seq]()
-        tron.log( "#{seq} passed." )
+        tron.log( "#{color}#{seq} passed." )
         for [check, error] in checks
           name = @_name_of_function(check)
           unless error
             tron.log( "..#{name} passed." )
           else
-            tron.warn( "failure in #{name}:" )
+            color = special('red')
+            tron.warn( "#{color}..failure in #{name}:" )
+            tron.log( special('clear') )
+            tron.trace( error )
+            tron.log()
       catch error
-        tron.warn( "failure in #{seq}:")
-        tron.trace error
+        color = special('red')
+        tron.warn( "#{color}failure in #{seq}:\n")
+        tron.trace( error )
+      finally
+        tron.log( special('clear') )
     else
       for k of @
         @run(k) if k[0..3] is 'try_'
@@ -37,6 +52,9 @@ class Tron
     @subscriptions = [
       (method, args) -> console[method](args...)
     ]
+    @test_log = ( input ) ->
+      [fn, error] = input
+      throw error if error?
   
   subscribe: ( fn ) ->
     ###
@@ -105,7 +123,6 @@ class Tron
           @test_log( [ fn, null ] )
         catch error
           @test_log( [ fn, error ] )
-          throw error
         found = true
       else
         @warn(u)
