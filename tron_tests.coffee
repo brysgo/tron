@@ -1,4 +1,4 @@
-tron = require( './tron.coffee' )
+tron = require?( './tron.coffee' )
 
 class TronTests extends tron.tests
   check_subscribe_fn: ( fn ) ->
@@ -37,7 +37,7 @@ class TronTests extends tron.tests
     unless result is 'log:hello, I am a log.'
       throw 'there was a problem trying to capture logs.'
 
-tests = new TronTests()
+@tron_tests = tron_tests = new TronTests()
 
-for k, v of tests
+for k, v of @tron_tests
   exports[k] = v

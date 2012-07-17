@@ -1,7 +1,7 @@
 # Very useful helper function to remove array items
 Array::remove = (e) -> @[t..t] = [] if (t = @indexOf(e)) > -1
 
-tests = require( './tron_tests.coffee' )
+tron_tests = require?( './tron_tests.coffee' )
 
 special = (char) ->
   '\x1b[' + {
@@ -16,7 +16,7 @@ class TronTestFramework
     for key, value of @
       return key if value is fn
   run: ( seq=`undefined` ) ->
-    pre = tron.announce
+    pre = tron.test_log
     checks = []
     tron.test_log = ( fn ) -> checks.push( fn )
     if seq?
@@ -43,7 +43,7 @@ class TronTestFramework
     else
       for k of @
         @run(k) if k[0..3] is 'try_'
-    tron.announce = pre
+    tron.test_log = pre
 
 class Tron
   constructor: ->
@@ -64,7 +64,7 @@ class Tron
     is a list of arguments passed to that console function.
     ###
     handle = `undefined`
-    tron.test( tests.check_subscribe_fn, fn )
+    tron.test( tron_tests.check_subscribe_fn, fn )
     switch typeof fn
       when 'list'
         handle = ( @subscribe(f) for f in fn )
@@ -90,7 +90,7 @@ class Tron
     ###
     Temperarily overrides all subscriptions and returns logs instead.
     ###
-    tron.test( tests.check_is_function, fn )
+    tron.test( tron_tests.check_is_function, fn )
     tmp = @subscriptions
     r = []
     @subscriptions = [ (args...) -> r.push( args ) ]
@@ -198,8 +198,8 @@ class Tron
   
   tests: TronTestFramework
 
-tron = new Tron()
+@tron = tron = new Tron()
 
 if exports?
-  for k,v of tron
+  for k,v of @tron
     exports[k] = v
