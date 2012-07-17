@@ -5,9 +5,8 @@ option '-p', '--prefix [DIR]', 'set the installation prefix for `cake install`'
 
 task 'install', 'install CoffeeScript into /usr/local (or --prefix)', (options) ->
   base = options.prefix or '../meteor/packages'
-  destination  = "#{base}/tron"
-  console.log   "Installing CoffeeScript to #{destination}"
-  exec( "cp -Rf bin/tron/ #{destination}", (err, stdout, stderr) ->
+  console.log   "Installing CoffeeScript to #{base}"
+  exec( "cp -Rf bin/tron/ #{base}", (err, stdout, stderr) ->
     if err then console.log stderr.trim() else console.log 'done'
   )
 
