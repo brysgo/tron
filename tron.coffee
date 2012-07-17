@@ -8,41 +8,6 @@ special = (char) ->
     clear: '0m'
   }[char]
 
-class TronTestFramework
-  constructor: ->
-  _name_of_function: ( fn ) ->
-    for key, value of @
-      return key if value is fn
-  run: ( seq=`undefined` ) ->
-    pre = tron.test_log
-    checks = []
-    tron.test_log = ( fn ) -> checks.push( fn )
-    if seq?
-      try 
-        color = special('green')
-        @[seq]()
-        tron.log( "#{color}#{seq} passed." )
-        for [check, error] in checks
-          name = @_name_of_function(check)
-          unless error
-            tron.log( "..#{name} passed." )
-          else
-            color = special('red')
-            tron.warn( "#{color}..failure in #{name}:" )
-            tron.log( special('clear') )
-            tron.trace( error )
-            tron.log()
-      catch error
-        color = special('red')
-        tron.warn( "#{color}failure in #{seq}:\n")
-        tron.trace( error )
-      finally
-        tron.log( special('clear') )
-    else
-      for k of @
-        @run(k) if k[0..3] is 'try_'
-    tron.test_log = pre
-
 class Tron
   constructor: ->
     @timers = []
@@ -50,9 +15,8 @@ class Tron
     @subscriptions = [
       (method, args) -> console[method](args...)
     ]
-    @test_log = ( input ) ->
-      [fn, error] = input
-      throw error if error?
+    @named_tests = {}
+    @announce = false
   
   subscribe: ( fn ) ->
     ###
@@ -62,7 +26,7 @@ class Tron
     is a list of arguments passed to that console function.
     ###
     handle = `undefined`
-    tron.test( tests.check_subscribe_fn, fn )
+    tron.test( 'check_subscribe_fn', fn )
     switch typeof fn
       when 'list'
         handle = ( @subscribe(f) for f in fn )
@@ -88,7 +52,7 @@ class Tron
     ###
     Temperarily overrides all subscriptions and returns logs instead.
     ###
-    tron.test( tests.check_is_function, fn )
+    tron.test( 'check_is_function', fn )
     tmp = @subscriptions
     r = []
     @subscriptions = [ (args...) -> r.push( args ) ]
@@ -96,7 +60,7 @@ class Tron
     @subscriptions = tmp
     return r
     
-  test: (fn, args...) ->
+  test: (input, args...) =>
     ###
      This simple function will define the way we test Socrenchus. You can do
      things in most of the same ways you did them with the console.
@@ -114,17 +78,40 @@ class Tron
     args ?= []
     found = false
     return unless Math.random() < @scale
-    switch typeof fn
+    switch typeof input
       when 'function'
-        try
-          fn(args...)
-          @test_log( [ fn, null ] )
+        input(args...)
+      when 'object'
+        for k,v of input
+          @named_tests[k] = v
+      when 'string'
+        if input[0..3] is 'try_'
+          `crillic = 'Г'`
+          tron.log( " #{crillic} #{input} started.\n" )
+          @announce = true
+          @named_tests[input]()
+          @announce = false
+          tron.log( " L #{input} finished.\n" )
+          return
+        try 
+          color = special('green')
+          @named_tests[input]( args... )
+          `check = '✓'`
+          tron.log( "   #{check} #{color}#{input} passed." ) if @announce
         catch error
-          @test_log( [ fn, error ] )
-        found = true
-      else
-        @warn(u)
+          color = special('red')
+          `err_mark = '✗'`
+          tron.warn( "   #{err_mark} #{color}failure in #{input}:" )
+          tron.log( special('clear') )
+          tron.trace( error )
+        finally
+          tron.log( special('clear') )
+      when 'undefined'
+        for k,v of @named_tests
+          @test( k ) if k[0..3] is 'try_'
+      else throw "expected function, got #{typeof input}."
     return found
+
       
   
   throttle: ( scale ) ->
@@ -194,11 +181,9 @@ class Tron
   error:  (args...) -> @write('error', args)
   assert: (args...) -> @write('assert', args)
   
-  tests: TronTestFramework
-
 @tron = tron = new Tron()
 
-class TronTests extends tron.tests
+tron.test(
   check_subscribe_fn: ( fn ) ->
     m = [ "tron.subscribe( fn ) was expecting fn to",
           "but got" ]
@@ -234,10 +219,8 @@ class TronTests extends tron.tests
     result = [].concat(result...).join(':')
     unless result is 'log:hello, I am a log.'
       throw 'there was a problem trying to capture logs.'
-
-tests = new TronTests()
+)
 
 if exports?
   for k,v of @tron
     exports[k] = v
-  exports['tron_tests'] = tests

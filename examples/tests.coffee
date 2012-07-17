@@ -1,6 +1,6 @@
 tron = require '../tron.coffee'
 
-class ExampleTests extends tron.tests
+tron.test(
   check_is_string: (str) ->
     unless typeof str is 'string'
       throw "#{str} is not a string!"
@@ -16,14 +16,11 @@ class ExampleTests extends tron.tests
     ]
     unless [].concat(result...).join('') is [].concat(expected...).join('')
       throw "Expected #{expected} but got #{result}."
-
-
-# initialize our test class
-example_tests = new ExampleTests()
+)
 
 class Animal
   constructor: (@name) ->
-    tron.test( example_tests.check_is_string, @name )
+    tron.test( 'check_is_string', @name )
   move: (meters) ->
     tron.log( @name + " moved #{meters}m." )
 
@@ -41,8 +38,4 @@ henry = new Horse( 'Henry the horse' )
 sammy = new Snake( 'Sammy the snake' )
 
 # run tests
-example_tests.run()
-
-# export our namespace for requirejs
-for k,v of example_tests
-  exports[k] = v
+tron.test()
