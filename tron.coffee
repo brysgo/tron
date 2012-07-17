@@ -1,6 +1,35 @@
 # Very useful helper function to remove array items
 Array::remove = (e) -> @[t..t] = [] if (t = @indexOf(e)) > -1
 
+tests = require( './tron_tests.coffee' )
+
+class TronTestFramework
+  constructor: ->
+  _name_of_function: ( fn ) ->
+    for key, value of @
+      return key if value is fn
+  run: ( seq=`undefined` ) ->
+    pre = tron.announce
+    checks = []
+    tron.test_log = ( fn ) -> checks.push( fn )
+    if seq?
+      try 
+        @[seq]()
+        tron.log( "#{seq} passed." )
+        for [check, error] in checks
+          name = @_name_of_function(check)
+          unless error
+            tron.log( "..#{name} passed." )
+          else
+            tron.warn( "failure in #{name}:" )
+      catch error
+        tron.warn( "failure in #{seq}:")
+        tron.trace error
+    else
+      for k of @
+        @run(k) if k[0..3] is 'try_'
+    tron.announce = pre
+
 class Tron
   constructor: ->
     @timers = []
@@ -10,30 +39,27 @@ class Tron
     ]
   
   subscribe: ( fn ) ->
-    u = """
-    
+    ###
     Subscribe to console events with a function that takes two arguments
     
     The first argument is the console function being called, the second
     is a list of arguments passed to that console function.
-    
-    """
+    ###
     handle = `undefined`
+    tron.test( tests.check_subscribe_fn, fn )
     switch typeof fn
       when 'list'
         handle = ( @subscribe(f) for f in fn )
       when 'function'
         handle = @subscriptions.length
         @subscriptions.push( fn )
-      else @warn( u )
     return handle
   
   unsubscribe: ( handle ) ->
-    u = """
-    
+    ###
     Unsubscribe from tron with the handle returned by subscribe.
-    
-    """
+    FIXME: Using an index for handles breaks with unsubcriptions.
+    ###
     if handle?
       s = @subscriptions
       result = s[handle]
@@ -43,14 +69,10 @@ class Tron
       return ( @unsubscribe( i ) for s, i in @subscriptions )
   
   capture: ( fn ) ->
-    u = """
-    
+    ###
     Temperarily overrides all subscriptions and returns logs instead.
-    
-    """
-    unless typeof fn is 'function'
-      @warn( u )
-    
+    ###
+    tron.test( tests.check_is_function, fn )
     tmp = @subscriptions
     r = []
     @subscriptions = [ (args...) -> r.push( args ) ]
@@ -59,8 +81,7 @@ class Tron
     return r
     
   test: (fn, args...) ->
-    u = """
-
+    ###
      This simple function will define the way we test Socrenchus. You can do
      things in most of the same ways you did them with the console.
 
@@ -73,14 +94,18 @@ class Tron
         tron.error( "there is an error \#{here}" )
         
       tron.test(my_test, 'your', 'args', 'here')
-
-    """
+    ###
     args ?= []
     found = false
     return unless Math.random() < @scale
     switch typeof fn
       when 'function'
-        fn(args...)
+        try
+          fn(args...)
+          @test_log( [ fn, null ] )
+        catch error
+          @test_log( [ fn, error ] )
+          throw error
         found = true
       else
         @warn(u)
@@ -158,19 +183,6 @@ tron = new Tron()
 
 for k,v of tron
   exports[k] = v
-  
-class TronTests
-  constructor: ->
-  run: ( seq=`undefined` ) ->
-    if seq?
-      try 
-        @[seq]()
-        tron.log( "#{seq} passed." )
-      catch error
-        tron.warn( "failure in #{seq}:")
-        tron.trace error
-    else
-      for k of @
-        @run(k) if k[0..3] is 'try_'
 
-exports['tests'] = TronTests
+exports['tests'] = TronTestFramework
+
