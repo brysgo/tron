@@ -195,11 +195,11 @@ class Tron
   warn:   (args...) -> @write('warn', args)
   error:  (args...) -> @write('error', args)
   assert: (args...) -> @write('assert', args)
+  
+  tests: TronTestFramework
 
 tron = new Tron()
 
-for k,v of tron
-  exports[k] = v
-
-exports['tests'] = TronTestFramework
-
+if exports?
+  for k,v of tron
+    exports[k] = v
