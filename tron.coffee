@@ -62,18 +62,7 @@ class Tron
     
   test: (input, args...) =>
     ###
-     This simple function will define the way we test Socrenchus. You can do
-     things in most of the same ways you did them with the console.
-
-     Call it with your test function like this:
-      
-      my_test = (your, args, here) ->
-        tron.log( 'this writes to the log' )
-        tron.info( "this is \#{your} info message" )
-        tron.warn( "this is warning about your \#{args}" )
-        tron.error( "there is an error \#{here}" )
-        
-      tron.test(my_test, 'your', 'args', 'here')
+     This is tron's mini built in test framework.
     ###
     args ?= []
     found = false

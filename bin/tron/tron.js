@@ -1,9 +1,8 @@
 (function() {
-  var Tron, TronTestFramework, TronTests, k, special, tests, tron, v, _ref,
+  var Tron, k, special, tron, v, _ref,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = Array.prototype.slice,
-    __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
-    __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+    __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   Array.prototype.remove = function(e) {
     var t, _ref;
@@ -20,78 +19,18 @@
     }[char];
   };
 
-  TronTestFramework = (function() {
-
-    function TronTestFramework() {}
-
-    TronTestFramework.prototype._name_of_function = function(fn) {
-      var key, value;
-      for (key in this) {
-        value = this[key];
-        if (value === fn) return key;
-      }
-    };
-
-    TronTestFramework.prototype.run = function(seq) {
-      var check, checks, color, error, k, name, pre, _i, _len, _ref;
-      if (seq == null) seq = undefined;
-      pre = tron.test_log;
-      checks = [];
-      tron.test_log = function(fn) {
-        return checks.push(fn);
-      };
-      if (seq != null) {
-        try {
-          color = special('green');
-          this[seq]();
-          tron.log("" + color + seq + " passed.");
-          for (_i = 0, _len = checks.length; _i < _len; _i++) {
-            _ref = checks[_i], check = _ref[0], error = _ref[1];
-            name = this._name_of_function(check);
-            if (!error) {
-              tron.log(".." + name + " passed.");
-            } else {
-              color = special('red');
-              tron.warn("" + color + "..failure in " + name + ":");
-              tron.log(special('clear'));
-              tron.trace(error);
-              tron.log();
-            }
-          }
-        } catch (error) {
-          color = special('red');
-          tron.warn("" + color + "failure in " + seq + ":\n");
-          tron.trace(error);
-        } finally {
-          tron.log(special('clear'));
-        }
-      } else {
-        for (k in this) {
-          if (k.slice(0, 4) === 'try_') this.run(k);
-        }
-      }
-      return tron.test_log = pre;
-    };
-
-    return TronTestFramework;
-
-  })();
-
   Tron = (function() {
 
     function Tron() {
-      this.timers = [];
+      this.test = __bind(this.test, this);      this.timers = [];
       this.scale = 1.0;
       this.subscriptions = [
         function(method, args) {
           return console[method].apply(console, args);
         }
       ];
-      this.test_log = function(input) {
-        var error, fn;
-        fn = input[0], error = input[1];
-        if (error != null) throw error;
-      };
+      this.named_tests = {};
+      this.announce = false;
     }
 
     Tron.prototype.subscribe = function(fn) {
@@ -103,7 +42,7 @@
       */
       var f, handle;
       handle = undefined;
-      tron.test(tests.check_subscribe_fn, fn);
+      tron.test('check_subscribe_fn', fn);
       switch (typeof fn) {
         case 'list':
           handle = (function() {
@@ -153,7 +92,7 @@
           Temperarily overrides all subscriptions and returns logs instead.
       */
       var r, tmp;
-      tron.test(tests.check_is_function, fn);
+      tron.test('check_is_function', fn);
       tmp = this.subscriptions;
       r = [];
       this.subscriptions = [
@@ -169,8 +108,8 @@
     };
 
     Tron.prototype.test = function() {
-      var args, fn, found;
-      fn = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      var args, color, found, input, k, v, _ref, _ref2;
+      input = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
       /*
            This simple function will define the way we test Socrenchus. You can do
            things in most of the same ways you did them with the console.
@@ -188,18 +127,52 @@
       if (args == null) args = [];
       found = false;
       if (!(Math.random() < this.scale)) return;
-      switch (typeof fn) {
+      switch (typeof input) {
         case 'function':
-          try {
-            fn.apply(null, args);
-            this.test_log([fn, null]);
-          } catch (error) {
-            this.test_log([fn, error]);
+          input.apply(null, args);
+          break;
+        case 'object':
+          for (k in input) {
+            v = input[k];
+            this.named_tests[k] = v;
           }
-          found = true;
+          break;
+        case 'string':
+          if (input.slice(0, 4) === 'try_') {
+            crillic = 'Г';
+            tron.log(" " + crillic + " " + input + " started.\n");
+            this.announce = true;
+            this.named_tests[input]();
+            this.announce = false;
+            tron.log(" L " + input + " finished.\n");
+            return;
+          }
+          try {
+            color = special('green');
+            (_ref = this.named_tests)[input].apply(_ref, args);
+            check = '✓';
+            if (this.announce) {
+              tron.log("   " + check + " " + color + input + " passed.");
+            }
+          } catch (error) {
+            color = special('red');
+            err_mark = '✗';
+            tron.warn("   " + err_mark + " " + color + "failure in " + input + ":");
+            tron.log(special('clear'));
+            tron.trace(error);
+          } finally {
+            tron.log(special('clear'));
+          }
+          break;
+        case 'undefined':
+          _ref2 = this.named_tests;
+          for (k in _ref2) {
+            v = _ref2[k];
+            if (k.slice(0, 4) === 'try_') this.test(k);
+          }
           break;
         default:
-          this.warn(u);
+          throw "expected function, got " + (typeof input) + ".";
       }
       return found;
     };
@@ -308,23 +281,14 @@
       return this.write('assert', args);
     };
 
-    Tron.prototype.tests = TronTestFramework;
-
     return Tron;
 
   })();
 
   this.tron = tron = new Tron();
 
-  TronTests = (function(_super) {
-
-    __extends(TronTests, _super);
-
-    function TronTests() {
-      TronTests.__super__.constructor.apply(this, arguments);
-    }
-
-    TronTests.prototype.check_subscribe_fn = function(fn) {
+  tron.test({
+    check_subscribe_fn: function(fn) {
       var incorrect_args, m, t;
       m = ["tron.subscribe( fn ) was expecting fn to", "but got"];
       t = typeof fn;
@@ -342,15 +306,13 @@
       if (incorrect_args) {
         throw "" + m[0] + " have 2 arguments " + m[1] + " " + fn.length + " argument(s)";
       }
-    };
-
-    TronTests.prototype.check_is_function = function(fn) {
+    },
+    check_is_function: function(fn) {
       var t;
       t = typeof fn;
       if (t !== 'function') throw "was expecting function, but got " + t + ".";
-    };
-
-    TronTests.prototype.try_varargs_subscribe = function() {
+    },
+    try_varargs_subscribe: function() {
       var fn, h, result, _ref;
       result = void 0;
       fn = tron.unsubscribe(0);
@@ -365,9 +327,8 @@
       if ((_ref = []).concat.apply(_ref, result).join(':') !== 'log:test') {
         throw 'there was a problem adding a subscription.';
       }
-    };
-
-    TronTests.prototype.try_capture = function() {
+    },
+    try_capture: function() {
       var result, _ref;
       result = tron.capture(function() {
         return tron.log('hello, I am a log.');
@@ -376,13 +337,8 @@
       if (result !== 'log:hello, I am a log.') {
         throw 'there was a problem trying to capture logs.';
       }
-    };
-
-    return TronTests;
-
-  })(tron.tests);
-
-  tests = new TronTests();
+    }
+  });
 
   if (typeof exports !== "undefined" && exports !== null) {
     _ref = this.tron;
@@ -390,7 +346,6 @@
       v = _ref[k];
       exports[k] = v;
     }
-    exports['tron_tests'] = tests;
   }
 
 }).call(this);
