@@ -1,5 +1,5 @@
 (function() {
-  var Tron, k, special, tron, v, _ref,
+  var Tron, k, tron, v, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = Array.prototype.slice,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -11,27 +11,28 @@
     }
   };
 
-  special = function(char) {
-    return '\x1b[' + {
-      green: '32m',
-      red: '31m',
-      clear: '0m'
-    }[char];
-  };
-
   Tron = (function() {
 
     function Tron() {
       this.test = __bind(this.test, this);      this.timers = [];
       this.scale = 1.0;
-      this.subscriptions = [
-        function(method, args) {
-          return console[method].apply(console, args);
-        }
-      ];
+      this.console = function(method, args) {
+        return console[method].apply(console, args);
+      };
+      this.subscriptions = [this.console];
       this.named_tests = {};
       this.announce = false;
+      this.use_color = true;
     }
+
+    Tron.prototype.color = function(char) {
+      if (!this.use_color) return '';
+      return '\x1b[' + {
+        green: '32m',
+        red: '31m',
+        clear: '0m'
+      }[char];
+    };
 
     Tron.prototype.subscribe = function(fn) {
       /*
@@ -40,51 +41,44 @@
           The first argument is the console function being called, the second
           is a list of arguments passed to that console function.
       */
-      var f, handle;
-      handle = undefined;
+      var f, _i, _len;
       tron.test('check_subscribe_fn', fn);
       switch (typeof fn) {
         case 'list':
-          handle = (function() {
-            var _i, _len, _results;
-            _results = [];
-            for (_i = 0, _len = fn.length; _i < _len; _i++) {
-              f = fn[_i];
-              _results.push(this.subscribe(f));
-            }
-            return _results;
-          }).call(this);
+          for (_i = 0, _len = fn.length; _i < _len; _i++) {
+            f = fn[_i];
+            this.subscribe(f);
+          }
           break;
         case 'function':
-          handle = this.subscriptions.length;
           this.subscriptions.push(fn);
       }
-      return handle;
+      return fn;
     };
 
-    Tron.prototype.unsubscribe = function(handle) {
+    Tron.prototype.unsubscribe = function(fn) {
       /*
           Unsubscribe from tron with the handle returned by subscribe.
-          FIXME: Using an index for handles breaks with unsubcriptions.
       */
-      var i, result, s;
-      if (handle != null) {
-        s = this.subscriptions;
-        result = s[handle];
-        this.subscriptions = s.slice(0, handle).concat(s.slice(handle + 1));
-        return result;
-      } else {
-        return (function() {
-          var _len, _ref, _results;
-          _ref = this.subscriptions;
-          _results = [];
-          for (i = 0, _len = _ref.length; i < _len; i++) {
-            s = _ref[i];
-            _results.push(this.unsubscribe(i));
+      var f, _i, _j, _len, _len2, _ref;
+      switch (typeof fn) {
+        case 'list':
+          for (_i = 0, _len = fn.length; _i < _len; _i++) {
+            f = fn[_i];
+            this.unsubscribe(f);
           }
-          return _results;
-        }).call(this);
+          break;
+        case 'function':
+          this.subscriptions.remove(fn);
+          break;
+        case 'undefined':
+          _ref = this.subscriptions;
+          for (_j = 0, _len2 = _ref.length; _j < _len2; _j++) {
+            f = _ref[_j];
+            this.unsubscribe(f);
+          }
       }
+      return fn;
     };
 
     Tron.prototype.capture = function(fn) {
@@ -111,18 +105,7 @@
       var args, color, found, input, k, v, _ref, _ref2;
       input = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
       /*
-           This simple function will define the way we test Socrenchus. You can do
-           things in most of the same ways you did them with the console.
-      
-           Call it with your test function like this:
-            
-            my_test = (your, args, here) ->
-              tron.log( 'this writes to the log' )
-              tron.info( "this is \#{your} info message" )
-              tron.warn( "this is warning about your \#{args}" )
-              tron.error( "there is an error \#{here}" )
-              
-            tron.test(my_test, 'your', 'args', 'here')
+           This is tron's mini built in test framework.
       */
       if (args == null) args = [];
       found = false;
@@ -148,20 +131,20 @@
             return;
           }
           try {
-            color = special('green');
+            color = this.color('green');
             (_ref = this.named_tests)[input].apply(_ref, args);
             check = '✓';
             if (this.announce) {
               tron.log("   " + check + " " + color + input + " passed.");
             }
           } catch (error) {
-            color = special('red');
+            color = this.color('red');
             err_mark = '✗';
             tron.warn("   " + err_mark + " " + color + "failure in " + input + ":");
-            tron.log(special('clear'));
+            tron.log(this.color('clear'));
             tron.trace(error);
           } finally {
-            tron.log(special('clear'));
+            tron.log(this.color('clear'));
           }
           break;
         case 'undefined':
@@ -215,6 +198,20 @@
       } else {
         return this.min_level = level;
       }
+    };
+
+    Tron.prototype.sync = function(tron_object) {
+      /*
+          Overwrites sharable state with tron_object.
+      */
+      var item, shared_props, _i, _len, _results;
+      shared_props = ['announce', 'scale'];
+      _results = [];
+      for (_i = 0, _len = shared_props.length; _i < _len; _i++) {
+        item = shared_props[_i];
+        _results.push(this[item] = tron_object[item]);
+      }
+      return _results;
     };
 
     Tron.prototype.write = function(method, args) {
@@ -315,7 +312,7 @@
     try_varargs_subscribe: function() {
       var fn, h, result, _ref;
       result = void 0;
-      fn = tron.unsubscribe(0);
+      fn = tron.unsubscribe(tron.console);
       h = tron.subscribe(function() {
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
