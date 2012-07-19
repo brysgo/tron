@@ -5,7 +5,13 @@ class Tron
   constructor: ->
     @timers = []
     @scale = 1.0
-    @console = (method, args) -> console[method](args...)
+    @console = (method, args) ->
+      unless @use_color
+        prefix = '\x1b['
+        colors = [ '32m', '31m', '0m' ]
+        for c in colors
+          args = ( a.replace(prefix+c,'') for a in args )
+      console[method](args...)
     @subscriptions = [
       @console
     ]
@@ -13,8 +19,7 @@ class Tron
     @announce = false
     @use_color = true
   
-  color: (char) ->
-    unless @use_color then return ''
+  color: (char) =>
     '\x1b[' + {
       green: '32m'
       red: '31m'

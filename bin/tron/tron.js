@@ -14,9 +14,27 @@
   Tron = (function() {
 
     function Tron() {
-      this.test = __bind(this.test, this);      this.timers = [];
+      this.test = __bind(this.test, this);
+      this.color = __bind(this.color, this);      this.timers = [];
       this.scale = 1.0;
       this.console = function(method, args) {
+        var a, c, colors, prefix, _i, _len;
+        if (!this.use_color) {
+          prefix = '\x1b[';
+          colors = ['32m', '31m', '0m'];
+          for (_i = 0, _len = colors.length; _i < _len; _i++) {
+            c = colors[_i];
+            args = (function() {
+              var _j, _len2, _results;
+              _results = [];
+              for (_j = 0, _len2 = args.length; _j < _len2; _j++) {
+                a = args[_j];
+                _results.push(a.replace(prefix + c, ''));
+              }
+              return _results;
+            })();
+          }
+        }
         return console[method].apply(console, args);
       };
       this.subscriptions = [this.console];
@@ -26,7 +44,6 @@
     }
 
     Tron.prototype.color = function(char) {
-      if (!this.use_color) return '';
       return '\x1b[' + {
         green: '32m',
         red: '31m',
