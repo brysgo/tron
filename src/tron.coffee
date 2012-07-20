@@ -83,16 +83,16 @@ class Tron
           `crillic = 'Г'`
           tron.log( " #{crillic} #{input} started.\n" )
           @named_tests[input]()
-          @coverage_map[input] = @coverage_map['current']
+          @coverage_map?[input] = @coverage_map['current']
           tron.log( " L #{input} finished.\n" )
           return
-        @coverage_map['current'] ?= []
-        @coverage_map['current'].push( input )
+        @coverage_map?['current'] ?= []
+        @coverage_map?['current'].push( input )
         try           
           color = @color('green')
           @named_tests[input]( args... )
           `check = '✓'`
-          tron.log( "   #{check} #{color}#{input} passed." ) if @announce
+          tron.log( "   #{check} #{color}#{input} passed." ) if @coverage_map?
         catch error
           color = @color('red')
           `err_mark = '✗'`
@@ -104,9 +104,7 @@ class Tron
       when 'undefined'
         @coverage_map = {}
         for k,v of @named_tests
-          @announce = true
           @test( k ) if k[0..3] is 'try_'
-          @announce = false
         empty_trys = []
         checks = []
         missed_checks = []
@@ -130,7 +128,7 @@ class Tron
           for try_test in empty_trys
             m += " ~ #{try_test}"
           tron.warn( m )
-        @coverage_map = {}
+        @coverage_map = undefined
       else throw "expected function, got #{typeof input}."
     return found
 
