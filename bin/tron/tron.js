@@ -18,22 +18,17 @@
       this.color = __bind(this.color, this);      this.timers = [];
       this.scale = 1.0;
       this.console = function(method, args) {
-        var a, c, colors, prefix, _i, _len;
+        var a;
         if (!this.use_color) {
-          prefix = '\x1b[';
-          colors = ['32m', '31m', '0m'];
-          for (_i = 0, _len = colors.length; _i < _len; _i++) {
-            c = colors[_i];
-            args = (function() {
-              var _j, _len2, _results;
-              _results = [];
-              for (_j = 0, _len2 = args.length; _j < _len2; _j++) {
-                a = args[_j];
-                _results.push(a.replace(prefix + c, ''));
-              }
-              return _results;
-            })();
-          }
+          args = (function() {
+            var _i, _len, _ref, _results;
+            _results = [];
+            for (_i = 0, _len = args.length; _i < _len; _i++) {
+              a = args[_i];
+              _results.push((_ref = typeof a.replace === "function" ? a.replace(/\x1b\[[0-9]*m/g, '') : void 0) != null ? _ref : a);
+            }
+            return _results;
+          })();
         }
         return console[method].apply(console, args);
       };

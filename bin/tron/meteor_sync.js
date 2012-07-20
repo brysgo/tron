@@ -7,7 +7,7 @@
     old_console = tron.console;
     tron.unsubscribe(old_console);
     tron.console = function(fn, args) {
-      Meteor.call('sync_tron', tron, Meteor.is_client, fn, args);
+      Meteor.call('sync_tron', tron, Meteor.is_client, fn, args, function() {});
       return old_console(fn, args);
     };
     return tron.subscribe(tron.console);

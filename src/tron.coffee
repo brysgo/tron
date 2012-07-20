@@ -7,10 +7,7 @@ class Tron
     @scale = 1.0
     @console = (method, args) ->
       unless @use_color
-        prefix = '\x1b['
-        colors = [ '32m', '31m', '0m' ]
-        for c in colors
-          args = ( a.replace?(prefix+c,'') for a in args )
+        args = ( a.replace?(/\x1b\[[0-9]*m/g,'') ? a for a in args )
       console[method](args...)
     @subscriptions = [
       @console

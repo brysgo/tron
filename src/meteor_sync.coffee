@@ -9,7 +9,7 @@ Meteor.startup( ->
   tron.unsubscribe( old_console )
 
   tron.console = ( fn, args ) ->
-    Meteor.call( 'sync_tron', tron, Meteor.is_client, fn, args )
+    Meteor.call( 'sync_tron', tron, Meteor.is_client, fn, args, -> )
     old_console( fn, args )
 
   tron.subscribe( tron.console )
