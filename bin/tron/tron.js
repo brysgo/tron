@@ -1,5 +1,5 @@
 (function() {
-  var Tron, k, tron, v, _ref,
+  var Tron, k, tron, v, _ref, _tron,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = Array.prototype.slice,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -17,6 +17,7 @@
       this.test = __bind(this.test, this);
       this.color = __bind(this.color, this);      this.timers = [];
       this.scale = 1.0;
+      this.use_color = true;
       this.console = function(method, args) {
         var a;
         if (!this.use_color) {
@@ -35,14 +36,13 @@
       this.subscriptions = [this.console];
       this.named_tests = {};
       this.announce = false;
-      this.use_color = true;
     }
 
     Tron.prototype.color = function(char) {
       return '\x1b[' + {
         green: '32m',
         red: '31m',
-        clear: '0m'
+        clear: '00m'
       }[char];
     };
 
@@ -54,7 +54,7 @@
           is a list of arguments passed to that console function.
       */
       var f, _i, _len;
-      tron.test('check_subscribe_fn', fn);
+      _tron.test('check_subscribe_fn', fn);
       switch (typeof fn) {
         case 'list':
           for (_i = 0, _len = fn.length; _i < _len; _i++) {
@@ -98,7 +98,7 @@
           Temperarily overrides all subscriptions and returns logs instead.
       */
       var r, tmp;
-      tron.test('check_is_function', fn);
+      _tron.test('check_is_function', fn);
       tmp = this.subscriptions;
       r = [];
       this.subscriptions = [
@@ -114,7 +114,7 @@
     };
 
     Tron.prototype.test = function() {
-      var args, color, found, input, k, v, _ref, _ref2;
+      var args, check, checks, color, empty_trys, found, input, k, key, m, missed_checks, try_test, v, value, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4;
       input = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
       /*
            This is tron's mini built in test framework.
@@ -136,17 +136,18 @@
           if (input.slice(0, 4) === 'try_') {
             crillic = 'Г';
             tron.log(" " + crillic + " " + input + " started.\n");
-            this.announce = true;
+            this.coverage_map['current'] = [];
             this.named_tests[input]();
-            this.announce = false;
+            this.coverage_map[input] = this.coverage_map['current'];
             tron.log(" L " + input + " finished.\n");
             return;
           }
+          if ((_ref = this.coverage_map) != null) _ref['current'].push(input);
           try {
             color = this.color('green');
-            (_ref = this.named_tests)[input].apply(_ref, args);
+            (_ref2 = this.named_tests)[input].apply(_ref2, args);
             check = '✓';
-            if (this.announce) {
+            if (this.coverage_map != null) {
               tron.log("   " + check + " " + color + input + " passed.");
             }
           } catch (error) {
@@ -160,11 +161,46 @@
           }
           break;
         case 'undefined':
-          _ref2 = this.named_tests;
-          for (k in _ref2) {
-            v = _ref2[k];
+          this.coverage_map = {};
+          _ref3 = this.named_tests;
+          for (k in _ref3) {
+            v = _ref3[k];
             if (k.slice(0, 4) === 'try_') this.test(k);
           }
+          empty_trys = [];
+          checks = [];
+          missed_checks = [];
+          _ref4 = this.coverage_map;
+          for (key in _ref4) {
+            value = _ref4[key];
+            if (key === 'current') continue;
+            checks = checks.concat(value);
+            if (value.length === 0) empty_trys.push(key);
+          }
+          for (key in this.named_tests) {
+            if (key in this.coverage_map) continue;
+            if (__indexOf.call(checks, key) < 0) missed_checks.push(key);
+          }
+          color = this.color('red');
+          m = missed_checks.length;
+          if (m > 0) {
+            m = ("" + color + "Your try tests missed " + m + " checks:\n") + this.color('clear');
+            for (_i = 0, _len = missed_checks.length; _i < _len; _i++) {
+              check = missed_checks[_i];
+              m += " ~ " + check;
+            }
+            tron.warn(m);
+          }
+          m = empty_trys.length;
+          if (m > 0) {
+            m = ("" + color + "There were no checks in " + m + " try tests:\n") + this.color('clear');
+            for (_j = 0, _len2 = empty_trys.length; _j < _len2; _j++) {
+              try_test = empty_trys[_j];
+              m += " ~ " + try_test;
+            }
+            tron.warn(m);
+          }
+          this.coverage_map = void 0;
           break;
         default:
           throw "expected function, got " + (typeof input) + ".";
@@ -294,9 +330,11 @@
 
   })();
 
+  _tron = new Tron();
+
   this.tron = tron = new Tron();
 
-  tron.test({
+  _tron.test({
     check_subscribe_fn: function(fn) {
       var incorrect_args, m, t;
       m = ["tron.subscribe( fn ) was expecting fn to", "but got"];
@@ -322,25 +360,28 @@
       if (t !== 'function') throw "was expecting function, but got " + t + ".";
     },
     try_varargs_subscribe: function() {
-      var fn, h, result, _ref;
+      var fn, h, result, _ref, _ref2;
       result = void 0;
-      fn = tron.unsubscribe(tron.console);
-      h = tron.subscribe(function() {
+      fn = _tron.unsubscribe(_tron.console);
+      h = _tron.subscribe(function() {
         var args;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         return result = args;
       });
-      tron.log('test');
-      tron.unsubscribe(h);
-      tron.subscribe(fn);
-      if ((_ref = []).concat.apply(_ref, result).join(':') !== 'log:test') {
+      _tron.log('test');
+      _tron.unsubscribe(h);
+      _tron.subscribe(fn);
+      if (_ref = _tron.console, __indexOf.call(_tron.subscriptions, _ref) < 0) {
+        throw 'tron.console was not resubscribed.';
+      }
+      if ((_ref2 = []).concat.apply(_ref2, result).join(':') !== 'log:test') {
         throw 'there was a problem adding a subscription.';
       }
     },
     try_capture: function() {
       var result, _ref;
-      result = tron.capture(function() {
-        return tron.log('hello, I am a log.');
+      result = _tron.capture(function() {
+        return _tron.log('hello, I am a log.');
       });
       result = (_ref = []).concat.apply(_ref, result).join(':');
       if (result !== 'log:hello, I am a log.') {
@@ -355,6 +396,7 @@
       v = _ref[k];
       exports[k] = v;
     }
+    exports['run_tests'] = _tron.test;
   }
 
 }).call(this);

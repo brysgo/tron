@@ -17,4 +17,4 @@ task 'build', 'build meteor plugin for project', ->
 
 task 'test', 'test tron', (options) ->
   tron = require( './src/tron.coffee' )
-  tron.test()
+  tron.run_tests()
