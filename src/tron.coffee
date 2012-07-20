@@ -181,13 +181,16 @@ class Tron
     else
       @min_level = level
       
-  sync: ( tron_object ) ->
+  sync: ( tron_object ) =>
     ###
     Overwrites sharable state with tron_object.
     ###
-    shared_props = [ 'announce', 'scale', 'coverage_map' ]
+    shared_props = [ 'announce', 'scale' ]
     for item in shared_props
       @[item] = tron_object[item]
+    for k, v of tron_object[ 'coverage_map' ]
+      @['coverage_map'][k] ?= []
+      @['coverage_map'][k] = @['coverage_map'][k].concat(v)
 
   write: (method, args) ->
     suppress = ( =>
