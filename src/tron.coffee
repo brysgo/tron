@@ -14,7 +14,7 @@ class Tron
       @console
     ]
     @named_tests = {}
-    @announce = false
+    @coverage_map = {}
   
   color: (char) =>
     '\x1b[' + {
@@ -86,12 +86,12 @@ class Tron
           @coverage_map[input] = @coverage_map['current']
           tron.log( " L #{input} finished.\n" )
           return
-        @coverage_map?['current'].push( input )
+        @coverage_map['current'].push( input )
         try           
           color = @color('green')
           @named_tests[input]( args... )
           `check = '✓'`
-          tron.log( "   #{check} #{color}#{input} passed." ) if @coverage_map?
+          tron.log( "   #{check} #{color}#{input} passed." ) if @coverage_map.current?
         catch error
           color = @color('red')
           `err_mark = '✗'`
@@ -127,7 +127,7 @@ class Tron
           for try_test in empty_trys
             m += " ~ #{try_test}"
           tron.warn( m )
-        @coverage_map = undefined
+        @coverage_map = {}
       else throw "expected function, got #{typeof input}."
     return found
 
@@ -249,6 +249,10 @@ _tron.test(
     result = [].concat(result...).join(':')
     unless result is 'log:hello, I am a log.'
       throw 'there was a problem trying to capture logs.'
+  try_calling_try_like_check: ->
+    tron.capture( ->
+      _tron.test( 'try_capture' )
+    )
 )
 
 if exports?
