@@ -111,7 +111,7 @@ class Tron
         for key, value of @coverage_map
           continue if key is 'current'
           checks = checks.concat( value )
-          empty_trys.push( key ) if value.length is 0
+          empty_trys.push( key ) if value?.length is 0
         for key of @named_tests
           continue if key of @coverage_map
           missed_checks.push( key ) unless key in checks
