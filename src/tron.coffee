@@ -185,7 +185,7 @@ class Tron
     ###
     Overwrites sharable state with tron_object.
     ###
-    shared_props = [ 'announce', 'scale' ]
+    shared_props = [ 'announce', 'scale', 'coverage_map' ]
     for item in shared_props
       @[item] = tron_object[item]
 
