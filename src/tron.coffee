@@ -81,10 +81,10 @@ class Tron
       when 'string'
         if input[0..3] is 'try_'
           `crillic = 'Г'`
-          tron.log( " #{crillic} #{input} started.\n" )
+          @log( " #{crillic} #{input} started.\n" )
           @named_tests[input]()
           @coverage_map?[input] = @coverage_map['current']
-          tron.log( " L #{input} finished.\n" )
+          @log( " L #{input} finished.\n" )
           return
         @coverage_map?['current'] ?= []
         @coverage_map?['current'].push( input )
@@ -92,15 +92,15 @@ class Tron
           color = @color('green')
           @named_tests[input]( args... )
           `check = '✓'`
-          tron.log( "   #{check} #{color}#{input} passed." ) if @coverage_map?
+          @log( "   #{check} #{color}#{input} passed." ) if @coverage_map?
         catch error
           color = @color('red')
           `err_mark = '✗'`
-          tron.warn( "   #{err_mark} #{color}failure in #{input}:" )
-          tron.log( @color('clear') )
-          tron.trace( error )
+          @warn( "   #{err_mark} #{color}failure in #{input}:" )
+          @log( @color('clear') )
+          @trace( error )
         finally
-          tron.log( @color('clear') )
+          @log( @color('clear') )
       when 'undefined'
         @coverage_map = {}
         for k,v of @named_tests
@@ -121,13 +121,13 @@ class Tron
           m = "#{color}Your try tests missed #{m} checks:\n" + @color('clear')
           for check in missed_checks
             m += " ~ #{check}"
-          tron.warn( m )  
+          @warn( m )  
         m = empty_trys.length
         if m > 0
           m = "#{color}There were no checks in #{m} try tests:\n" + @color('clear')
           for try_test in empty_trys
             m += " ~ #{try_test}"
-          tron.warn( m )
+          @warn( m )
         @coverage_map = undefined
       else throw "expected function, got #{typeof input}."
     return found
@@ -201,7 +201,7 @@ class Tron
     )()
     unless suppress
       for s in @subscriptions
-        s(method, args)
+        s.call(@, method, args)
 
 
   dir:    (args...) -> @write('dir', args) 
@@ -213,7 +213,8 @@ class Tron
   assert: (args...) -> @write('assert', args)
   
 _tron = new Tron()
-@tron = tron = new Tron()
+_tron_console = _tron.unsubscribe(_tron.console)
+`tron = new Tron()`
 
 _tron.test(
   check_subscribe_fn: ( fn ) ->
@@ -237,18 +238,18 @@ _tron.test(
     throw "was expecting function, but got #{t}." unless t is 'function'
   try_varargs_subscribe: ->
     result = undefined
-    fn = _tron.unsubscribe( _tron.console )
-    h = _tron.subscribe( (args...) -> result = args )
-    _tron.log( 'test' )
-    _tron.unsubscribe( h )
-    _tron.subscribe( fn )
+    fn = tron.unsubscribe( tron.console )
+    h = tron.subscribe( (args...) -> result = args )
+    tron.log( 'test' )
+    tron.unsubscribe( h )
+    tron.subscribe( fn )
     unless _tron.console in _tron.subscriptions
       throw 'tron.console was not resubscribed.'
     unless [].concat(result...).join(':') is 'log:test'
       throw 'there was a problem adding a subscription.'
   try_capture: ->
-    result = _tron.capture( ->
-      _tron.log( 'hello, I am a log.')
+    result = tron.capture( ->
+      tron.log( 'hello, I am a log.')
     )
     result = [].concat(result...).join(':')
     unless result is 'log:hello, I am a log.'
@@ -260,6 +261,8 @@ _tron.test(
 )
 
 if exports?
-  for k,v of @tron
+  for k,v of tron
     exports[k] = v
-  exports['run_tests'] = _tron.test
+  exports['run_tests'] =  ->
+    _tron.subscribe(_tron_console)
+    _tron.test()
