@@ -1,0 +1,8 @@
+{
+  "name": "tron",
+  "description": "A suite of handy extensions to the javascript 'console'",
+  "homepage": "https://github.com/brysgo/tron",
+  "author": "Bryan Goldstein <brysgo@gmail.com> (http://brysgo.com)",
+  "version": "0.0.1",
+  "git": "https://github.com/brysgo/tron.git",
+}
